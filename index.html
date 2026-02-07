@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>مساعد فحص النباتات</title>
+    <link rel="stylesheet" href="static/style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>🌿 مساعد فحص النباتات</h1>
+      <p class="subtitle">ارفع صورة النبتة وسنقوم بتحليل أولي للألوان لإعطائك سبب المشكلة وما الذي يجب فعله.</p>
+
+      <section class="card">
+        <label for="imageInput">صورة النبتة</label>
+        <input id="imageInput" type="file" accept="image/*" />
+
+        <label for="notes">ملاحظات إضافية (اختياري)</label>
+        <textarea id="notes" rows="3" placeholder="مثال: يوجد بقع صغيرة وحشرات"></textarea>
+
+        <button id="analyzeBtn">تحليل النبتة</button>
+      </section>
+
+      <section class="preview-grid">
+        <article class="card">
+          <h2>معاينة الصورة</h2>
+          <img id="preview" alt="معاينة صورة النبتة" hidden />
+          <p id="previewHint">لم يتم اختيار صورة بعد.</p>
+        </article>
+
+        <article class="card">
+          <h2>نتيجة التحليل</h2>
+          <div id="results">ارفع صورة واضغط "تحليل النبتة".</div>
+        </article>
+      </section>
+    </main>
+
+    <script src="static/app.js"></script>
+  </body>
+</html>
