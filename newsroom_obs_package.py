@@ -147,70 +147,99 @@ def ensure_scene(scene_name):
         obs.obs_source_release(source)
 
 
-def ensure_source(source_name, source_kind, settings_dict):
-    source = obs.obs_get_source_by_name(source_name)
-    if source is None:
-        settings = obs.obs_data_create()
-        for key, value in settings_dict.items():
-            if isinstance(value, bool):
-                obs.obs_data_set_bool(settings, key, value)
-            elif isinstance(value, int):
-                obs.obs_data_set_int(settings, key, value)
-            elif isinstance(value, float):
-                obs.obs_data_set_double(settings, key, value)
-            else:
-                obs.obs_data_set_string(settings, key, str(value))
-
-        source = obs.obs_source_create(source_kind, source_name, settings, None)
-        obs.obs_data_release(settings)
-        if source is not None:
-            obs.obs_source_release(source)
-    else:
-        obs.obs_source_release(source)
-        update_source_settings(source_name, settings_dict)
-
-
-def update_source_settings(source_name, settings_dict):
-    source = obs.obs_get_source_by_name(source_name)
-    if source is None:
-        return
-
-    settings = obs.obs_source_get_settings(source)
+def _data_from_dict(settings_dict):
+    data = obs.obs_data_create()
     for key, value in settings_dict.items():
         if isinstance(value, bool):
-            obs.obs_data_set_bool(settings, key, value)
+            obs.obs_data_set_bool(data, key, value)
         elif isinstance(value, int):
-            obs.obs_data_set_int(settings, key, value)
+            obs.obs_data_set_int(data, key, value)
         elif isinstance(value, float):
-            obs.obs_data_set_double(settings, key, value)
+            obs.obs_data_set_double(data, key, value)
         else:
-            obs.obs_data_set_string(settings, key, str(value))
-
-    obs.obs_source_update(source, settings)
-    obs.obs_data_release(settings)
-    obs.obs_source_release(source)
+            obs.obs_data_set_string(data, key, str(value))
+    return data
 
 
-def add_source_to_scene(scene_name, source_name):
-    scene_source = obs.obs_get_source_by_name(scene_name)
+def ensure_scene_source(scene_name, source_name, source_kind, settings_dict):
+    scene_src = obs.obs_get_source_by_name(scene_name)
+    if scene_src is None:
+        log_warning(f"Scene not found while ensuring source: '{scene_name}'")
+        return
+
+    scene = obs.obs_scene_from_source(scene_src)
+    if scene is None:
+        obs.obs_source_release(scene_src)
+        return
+
+    scene_item = obs.obs_scene_find_source(scene, source_name)
+    if scene_item is None:
+        data = _data_from_dict(settings_dict)
+        src = obs.obs_source_create(source_kind, source_name, data, None)
+        obs.obs_data_release(data)
+
+        if src is None:
+            log_warning(f"Could not create source '{source_name}' of kind '{source_kind}'")
+            obs.obs_source_release(scene_src)
+            return
+
+        obs.obs_scene_add(scene, src)
+        obs.obs_source_release(src)
+    else:
+        src = obs.obs_sceneitem_get_source(scene_item)
+        if src is not None:
+            data = obs.obs_source_get_settings(src)
+            for key, value in settings_dict.items():
+                if isinstance(value, bool):
+                    obs.obs_data_set_bool(data, key, value)
+                elif isinstance(value, int):
+                    obs.obs_data_set_int(data, key, value)
+                elif isinstance(value, float):
+                    obs.obs_data_set_double(data, key, value)
+                else:
+                    obs.obs_data_set_string(data, key, str(value))
+            obs.obs_source_update(src, data)
+            obs.obs_data_release(data)
+
+    obs.obs_source_release(scene_src)
+
+
+def add_existing_source_to_scene(scene_name, source_name):
+    scene_src = obs.obs_get_source_by_name(scene_name)
     src = obs.obs_get_source_by_name(source_name)
-    if scene_source is None or src is None:
+    if scene_src is None or src is None:
         if src is None:
             log_warning(f"Source not found, skipping scene attach: '{source_name}' -> '{scene_name}'")
-        if scene_source is not None:
-            obs.obs_source_release(scene_source)
+        if scene_src is not None:
+            obs.obs_source_release(scene_src)
         if src is not None:
             obs.obs_source_release(src)
         return
 
-    scene = obs.obs_scene_from_source(scene_source)
+    scene = obs.obs_scene_from_source(scene_src)
     if scene is not None:
         existing = obs.obs_scene_find_source(scene, source_name)
         if existing is None:
             obs.obs_scene_add(scene, src)
 
     obs.obs_source_release(src)
-    obs.obs_source_release(scene_source)
+    obs.obs_source_release(scene_src)
+
+
+def lower_third_name(scene_name):
+    return f"{LOWER_THIRD_SOURCE}_{scene_name}"
+
+
+def ticker_name(scene_name):
+    return f"{TICKER_SOURCE}_{scene_name}"
+
+
+def clock_name(scene_name):
+    return f"{CLOCK_SOURCE}_{scene_name}"
+
+
+def logo_name(scene_name):
+    return f"{LOGO_SOURCE}_{scene_name}"
 
 
 def build_news_package():
@@ -219,97 +248,97 @@ def build_news_package():
     for scene_name in SCENES:
         ensure_scene(scene_name)
 
-    ensure_source(
-        LOWER_THIRD_SOURCE,
-        TEXT_SOURCE_KIND,
-        {
-            "text": LOWER_THIRD_TEXT,
-            "font": "Arial",
-            "size": 42,
-            "color": 0x00FFFFFF,
-            "outline": True,
-            "outline_color": 0x00000000,
-        },
-    )
-
     first_ticker = TICKER_ITEMS[0] if TICKER_ITEMS else ""
-    ensure_source(
-        TICKER_SOURCE,
-        TEXT_SOURCE_KIND,
-        {
-            "text": f"{CHANNEL_NAME} | {first_ticker}",
-            "font": "Arial",
-            "size": 34,
-            "color": 0x00FFFFFF,
-            "outline": True,
-            "outline_color": 0x00000000,
-        },
-    )
 
-    ensure_source(
-        CLOCK_SOURCE,
-        TEXT_SOURCE_KIND,
-        {
-            "text": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
-            "font": "Consolas",
-            "size": 28,
-            "color": 0x00FFFFFF,
-            "outline": True,
-            "outline_color": 0x00000000,
-        },
-    )
+    for scene_name in SCENES:
+        ensure_scene_source(
+            scene_name,
+            lower_third_name(scene_name),
+            TEXT_SOURCE_KIND,
+            {
+                "text": LOWER_THIRD_TEXT,
+                "font": "Arial",
+                "size": 42,
+                "color": 0x00FFFFFF,
+                "outline": True,
+                "outline_color": 0x00000000,
+            },
+        )
+        ensure_scene_source(
+            scene_name,
+            ticker_name(scene_name),
+            TEXT_SOURCE_KIND,
+            {
+                "text": f"{CHANNEL_NAME} | {first_ticker}",
+                "font": "Arial",
+                "size": 34,
+                "color": 0x00FFFFFF,
+                "outline": True,
+                "outline_color": 0x00000000,
+            },
+        )
+        ensure_scene_source(
+            scene_name,
+            clock_name(scene_name),
+            TEXT_SOURCE_KIND,
+            {
+                "text": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+                "font": "Consolas",
+                "size": 28,
+                "color": 0x00FFFFFF,
+                "outline": True,
+                "outline_color": 0x00000000,
+            },
+        )
 
-    if LOGO_PATH:
-        ensure_source(LOGO_SOURCE, "image_source", {"file": LOGO_PATH, "unload": False})
-
-    # Scene composition
-    main_scenes = SCENES[:4]
-    for scene_name in main_scenes:
-        for index, cam in enumerate(CAMERA_SOURCES, start=1):
-            if cam:
-                cam_source = obs.obs_get_source_by_name(cam)
-                if cam_source is not None:
-                    obs.obs_source_release(cam_source)
-                    add_source_to_scene(scene_name, cam)
-                else:
-                    placeholder = f"PKG_Missing_Camera_{index}"
-                    ensure_source(
-                        placeholder,
-                        TEXT_SOURCE_KIND,
-                        {
-                            "text": f"Missing camera source: {cam}",
-                            "font": "Arial",
-                            "size": 28,
-                            "color": 0x0000FFFF,
-                            "outline": True,
-                            "outline_color": 0x00000000,
-                        },
-                    )
-                    add_source_to_scene(scene_name, placeholder)
-                    log_warning(f"Configured camera source was not found: '{cam}'")
-        add_source_to_scene(scene_name, LOWER_THIRD_SOURCE)
-        add_source_to_scene(scene_name, TICKER_SOURCE)
-        add_source_to_scene(scene_name, CLOCK_SOURCE)
         if LOGO_PATH:
-            add_source_to_scene(scene_name, LOGO_SOURCE)
+            ensure_scene_source(scene_name, logo_name(scene_name), "image_source", {"file": LOGO_PATH, "unload": False})
 
-    # Multi-cam scene: include all cameras only
+    # Main scenes: 01..04
+    for scene_name in SCENES[:4]:
+        for index, cam in enumerate(CAMERA_SOURCES, start=1):
+            if not cam:
+                continue
+
+            cam_source = obs.obs_get_source_by_name(cam)
+            if cam_source is not None:
+                obs.obs_source_release(cam_source)
+                add_existing_source_to_scene(scene_name, cam)
+            else:
+                missing_name = f"PKG_Missing_Camera_{index}_{scene_name}"
+                ensure_scene_source(
+                    scene_name,
+                    missing_name,
+                    TEXT_SOURCE_KIND,
+                    {
+                        "text": f"Missing camera source: {cam}",
+                        "font": "Arial",
+                        "size": 28,
+                        "color": 0x0000FFFF,
+                        "outline": True,
+                        "outline_color": 0x00000000,
+                    },
+                )
+                log_warning(f"Configured camera source was not found: '{cam}'")
+
+    # Multi cam: attach only existing cameras
     for cam in CAMERA_SOURCES:
         if cam:
             cam_source = obs.obs_get_source_by_name(cam)
             if cam_source is not None:
                 obs.obs_source_release(cam_source)
-                add_source_to_scene("05_Multi_Cam", cam)
+                add_existing_source_to_scene("05_Multi_Cam", cam)
             else:
                 log_warning(f"Configured camera source was not found for 05_Multi_Cam: '{cam}'")
-    add_source_to_scene("05_Multi_Cam", TICKER_SOURCE)
-    add_source_to_scene("05_Multi_Cam", CLOCK_SOURCE)
-    if LOGO_PATH:
-        add_source_to_scene("05_Multi_Cam", LOGO_SOURCE)
 
     rotate_ticker()
     update_clock()
     log_info("News package build completed")
+
+
+def update_scene_overlay_sources(source_name_factory, settings_dict):
+    for scene_name in SCENES:
+        ensure_scene_source(scene_name, source_name_factory(scene_name), TEXT_SOURCE_KIND, settings_dict)
 
 
 def rotate_ticker():
@@ -320,8 +349,8 @@ def rotate_ticker():
 
     ACTIVE_TICKER_INDEX = (ACTIVE_TICKER_INDEX + 1) % len(TICKER_ITEMS)
     headline = TICKER_ITEMS[ACTIVE_TICKER_INDEX]
-    update_source_settings(TICKER_SOURCE, {"text": f"{CHANNEL_NAME} | {headline}"})
+    update_scene_overlay_sources(ticker_name, {"text": f"{CHANNEL_NAME} | {headline}"})
 
 
 def update_clock():
-    update_source_settings(CLOCK_SOURCE, {"text": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")})
+    update_scene_overlay_sources(clock_name, {"text": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")})
