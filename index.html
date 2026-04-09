@@ -42,6 +42,14 @@
               <input required type="text" id="birthInfo" placeholder="2008/01/01 - تيميمون" />
             </label>
             <label>
+              الجنس
+              <select required id="gender">
+                <option value="" disabled selected>اختر الجنس</option>
+                <option>ذكر</option>
+                <option>أنثى</option>
+              </select>
+            </label>
+            <label>
               الإقامة
               <input required type="text" id="residence" placeholder="الحي / البلدية" />
             </label>
@@ -107,6 +115,7 @@
               <tr>
                 <th>رقم التعريف</th>
                 <th>الاسم واللقب</th>
+                <th>الجنس</th>
                 <th>تاريخ ومكان الميلاد</th>
                 <th>الإقامة</th>
                 <th>اسم الولي</th>
@@ -121,7 +130,7 @@
             </thead>
             <tbody id="membersTableBody">
               <tr>
-                <td colspan="12" class="empty">لا توجد بيانات بعد. أضف أول عضو الآن.</td>
+                <td colspan="13" class="empty">لا توجد بيانات بعد. أضف أول عضو الآن.</td>
               </tr>
             </tbody>
           </table>
@@ -133,6 +142,7 @@
       <tr>
         <td data-key="memberId"></td>
         <td data-key="fullName"></td>
+        <td data-key="gender"></td>
         <td data-key="birthInfo"></td>
         <td data-key="residence"></td>
         <td data-key="guardianName"></td>

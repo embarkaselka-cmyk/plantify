@@ -63,6 +63,7 @@ exportCsvBtn.addEventListener("click", () => {
   const headers = [
     "رقم التعريف",
     "الاسم واللقب",
+    "الجنس",
     "تاريخ ومكان الميلاد",
     "الإقامة",
     "اسم الولي",
@@ -76,6 +77,7 @@ exportCsvBtn.addEventListener("click", () => {
   const rows = members.map((m) => [
     m.memberId,
     m.fullName,
+    m.gender,
     m.birthInfo,
     m.residence,
     m.guardianName,
@@ -103,6 +105,7 @@ function getFormData() {
   return {
     memberId: document.getElementById("memberId").value.trim(),
     fullName: document.getElementById("fullName").value.trim(),
+    gender: document.getElementById("gender").value,
     birthInfo: document.getElementById("birthInfo").value.trim(),
     residence: document.getElementById("residence").value.trim(),
     guardianName: document.getElementById("guardianName").value.trim(),
@@ -121,7 +124,7 @@ function renderTable(searchQuery = "") {
   const filteredMembers = members.filter((member) => {
     if (!normalized) return true;
 
-    return [member.memberId, member.fullName, member.phone, member.guardianName, member.guardianPhone]
+    return [member.memberId, member.fullName, member.gender, member.phone, member.guardianName, member.guardianPhone]
       .join(" ")
       .toLowerCase()
       .includes(normalized);
@@ -129,7 +132,7 @@ function renderTable(searchQuery = "") {
 
   if (!filteredMembers.length) {
     const row = document.createElement("tr");
-    row.innerHTML = `<td colspan="12" class="empty">لا توجد نتائج مطابقة.</td>`;
+    row.innerHTML = `<td colspan="13" class="empty">لا توجد نتائج مطابقة.</td>`;
     membersTableBody.appendChild(row);
     return;
   }
@@ -165,6 +168,7 @@ function renderTable(searchQuery = "") {
 function fillFormForEdit(member) {
   document.getElementById("memberId").value = member.memberId;
   document.getElementById("fullName").value = member.fullName;
+  document.getElementById("gender").value = member.gender || "";
   document.getElementById("birthInfo").value = member.birthInfo;
   document.getElementById("residence").value = member.residence;
   document.getElementById("guardianName").value = member.guardianName;
