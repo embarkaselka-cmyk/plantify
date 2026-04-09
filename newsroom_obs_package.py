@@ -114,7 +114,9 @@ def on_next_headline_button(props, prop):
 def ensure_scene(scene_name):
     source = obs.obs_get_source_by_name(scene_name)
     if source is None:
-        obs.obs_frontend_add_scene(scene_name)
+        scene_source = obs.obs_scene_create(scene_name)
+        if scene_source is not None:
+            obs.obs_source_release(scene_source)
     else:
         obs.obs_source_release(source)
 
