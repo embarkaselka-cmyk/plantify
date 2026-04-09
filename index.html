@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>نادي الصحفي الصغير - تيميمون | قاعدة بيانات الأعضاء</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="top-banner">
+        <div>
+          <p class="subtitle">الجمهورية الجزائرية الديمقراطية الشعبية</p>
+          <h1>برنامج أعضاء نادي الصحفي الصغير - تيميمون</h1>
+          <p class="description">
+            إدارة احترافية لبيانات الأعضاء مع بحث فوري وتصدير بصيغة CSV وتوليد QR مباشر.
+          </p>
+        </div>
+        <span class="badge">نسخة احترافية</span>
+      </header>
+
+      <section class="panel form-panel">
+        <h2>إضافة / تعديل عضو</h2>
+        <form id="memberForm">
+          <div class="grid">
+            <label>
+              رقم التعريف
+              <input required type="text" id="memberId" placeholder="مثال: TJC-001" />
+            </label>
+            <label>
+              الاسم واللقب
+              <input required type="text" id="fullName" placeholder="الاسم الكامل" />
+            </label>
+            <label>
+              تاريخ ومكان الميلاد
+              <input required type="text" id="birthInfo" placeholder="2008/01/01 - تيميمون" />
+            </label>
+            <label>
+              الجنس
+              <select required id="gender">
+                <option value="" disabled selected>اختر الجنس</option>
+                <option>ذكر</option>
+                <option>أنثى</option>
+              </select>
+            </label>
+            <label>
+              الإقامة
+              <input required type="text" id="residence" placeholder="الحي / البلدية" />
+            </label>
+            <label>
+              اسم الولي
+              <input required type="text" id="guardianName" placeholder="اسم ولي الأمر" />
+            </label>
+            <label>
+              رقم الولي
+              <input required type="tel" id="guardianPhone" placeholder="05XXXXXXXX" />
+            </label>
+            <label>
+              رقم الهاتف
+              <input required type="tel" id="phone" placeholder="05XXXXXXXX" />
+            </label>
+            <label>
+              الصفة
+              <select required id="role">
+                <option value="" disabled selected>اختر الصفة</option>
+                <option>عضو</option>
+                <option>عضو نشط</option>
+                <option>منسق</option>
+                <option>مشرف</option>
+                <option>رئيس</option>
+                <option>نائب رئيس أول</option>
+                <option>نائب رئيس ثان</option>
+              </select>
+            </label>
+            <label>
+              تاريخ الانضمام
+              <input required type="date" id="joinDate" />
+            </label>
+            <label class="wide">
+              نص الباركود / QR
+              <input required type="text" id="barcodeText" placeholder="TJC001-2026" />
+            </label>
+          </div>
+
+          <div class="qr-preview-wrap">
+            <p>معاينة QR مباشرة</p>
+            <div id="liveQr" class="qr-box" aria-label="live qr"></div>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn primary" id="saveBtn">حفظ العضو</button>
+            <button type="reset" class="btn ghost" id="clearBtn">إفراغ الحقول</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel table-panel">
+        <div class="table-head">
+          <h2>قائمة الأعضاء</h2>
+          <div class="table-tools">
+            <input id="searchInput" type="search" placeholder="بحث بالاسم، رقم التعريف أو الهاتف..." />
+            <button id="exportCsv" class="btn">تصدير CSV</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>رقم التعريف</th>
+                <th>الاسم واللقب</th>
+                <th>الجنس</th>
+                <th>تاريخ ومكان الميلاد</th>
+                <th>الإقامة</th>
+                <th>اسم الولي</th>
+                <th>رقم الولي</th>
+                <th>رقم الهاتف</th>
+                <th>الصفة</th>
+                <th>تاريخ الانضمام</th>
+                <th>نص الباركود</th>
+                <th>QR</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="membersTableBody">
+              <tr>
+                <td colspan="13" class="empty">لا توجد بيانات بعد. أضف أول عضو الآن.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <template id="rowTemplate">
+      <tr>
+        <td data-key="memberId"></td>
+        <td data-key="fullName"></td>
+        <td data-key="gender"></td>
+        <td data-key="birthInfo"></td>
+        <td data-key="residence"></td>
+        <td data-key="guardianName"></td>
+        <td data-key="guardianPhone"></td>
+        <td data-key="phone"></td>
+        <td data-key="role"></td>
+        <td data-key="joinDate"></td>
+        <td>
+          <span data-key="barcodeText" class="barcode-pill"></span>
+        </td>
+        <td>
+          <div class="qr-mini" data-key="qr"></div>
+        </td>
+        <td class="action-cell">
+          <button type="button" class="small edit">تعديل</button>
+          <button type="button" class="small danger delete">حذف</button>
+        </td>
+      </tr>
+    </template>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
