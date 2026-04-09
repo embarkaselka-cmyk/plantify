@@ -26,6 +26,31 @@ LOWER_THIRD_SOURCE = "PKG_LowerThird"
 TICKER_SOURCE = "PKG_Ticker"
 CLOCK_SOURCE = "PKG_Clock"
 LOGO_SOURCE = "PKG_Logo"
+TEXT_SOURCE_KIND = "text_gdiplus"
+
+
+def log_info(message):
+    obs.script_log(obs.LOG_INFO, message)
+
+
+def log_warning(message):
+    obs.script_log(obs.LOG_WARNING, message)
+
+
+def detect_text_source_kind():
+    global TEXT_SOURCE_KIND
+
+    for kind in ("text_gdiplus", "text_ft2_source"):
+        try:
+            display_name = obs.obs_source_get_display_name(kind)
+        except Exception:
+            display_name = ""
+
+        if display_name:
+            TEXT_SOURCE_KIND = kind
+            return
+
+    TEXT_SOURCE_KIND = "text_gdiplus"
 
 
 def script_description():
@@ -93,6 +118,7 @@ def script_update(settings):
 
 
 def script_load(settings):
+    detect_text_source_kind()
     script_update(settings)
 
 
@@ -169,6 +195,8 @@ def add_source_to_scene(scene_name, source_name):
     scene_source = obs.obs_get_source_by_name(scene_name)
     src = obs.obs_get_source_by_name(source_name)
     if scene_source is None or src is None:
+        if src is None:
+            log_warning(f"Source not found, skipping scene attach: '{source_name}' -> '{scene_name}'")
         if scene_source is not None:
             obs.obs_source_release(scene_source)
         if src is not None:
@@ -186,12 +214,14 @@ def add_source_to_scene(scene_name, source_name):
 
 
 def build_news_package():
+    detect_text_source_kind()
+
     for scene_name in SCENES:
         ensure_scene(scene_name)
 
     ensure_source(
         LOWER_THIRD_SOURCE,
-        "text_gdiplus",
+        TEXT_SOURCE_KIND,
         {
             "text": LOWER_THIRD_TEXT,
             "font": "Arial",
@@ -205,7 +235,7 @@ def build_news_package():
     first_ticker = TICKER_ITEMS[0] if TICKER_ITEMS else ""
     ensure_source(
         TICKER_SOURCE,
-        "text_gdiplus",
+        TEXT_SOURCE_KIND,
         {
             "text": f"{CHANNEL_NAME} | {first_ticker}",
             "font": "Arial",
@@ -218,7 +248,7 @@ def build_news_package():
 
     ensure_source(
         CLOCK_SOURCE,
-        "text_gdiplus",
+        TEXT_SOURCE_KIND,
         {
             "text": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
             "font": "Consolas",
@@ -235,9 +265,28 @@ def build_news_package():
     # Scene composition
     main_scenes = SCENES[:4]
     for scene_name in main_scenes:
-        for cam in CAMERA_SOURCES:
+        for index, cam in enumerate(CAMERA_SOURCES, start=1):
             if cam:
-                add_source_to_scene(scene_name, cam)
+                cam_source = obs.obs_get_source_by_name(cam)
+                if cam_source is not None:
+                    obs.obs_source_release(cam_source)
+                    add_source_to_scene(scene_name, cam)
+                else:
+                    placeholder = f"PKG_Missing_Camera_{index}"
+                    ensure_source(
+                        placeholder,
+                        TEXT_SOURCE_KIND,
+                        {
+                            "text": f"Missing camera source: {cam}",
+                            "font": "Arial",
+                            "size": 28,
+                            "color": 0x0000FFFF,
+                            "outline": True,
+                            "outline_color": 0x00000000,
+                        },
+                    )
+                    add_source_to_scene(scene_name, placeholder)
+                    log_warning(f"Configured camera source was not found: '{cam}'")
         add_source_to_scene(scene_name, LOWER_THIRD_SOURCE)
         add_source_to_scene(scene_name, TICKER_SOURCE)
         add_source_to_scene(scene_name, CLOCK_SOURCE)
@@ -247,7 +296,12 @@ def build_news_package():
     # Multi-cam scene: include all cameras only
     for cam in CAMERA_SOURCES:
         if cam:
-            add_source_to_scene("05_Multi_Cam", cam)
+            cam_source = obs.obs_get_source_by_name(cam)
+            if cam_source is not None:
+                obs.obs_source_release(cam_source)
+                add_source_to_scene("05_Multi_Cam", cam)
+            else:
+                log_warning(f"Configured camera source was not found for 05_Multi_Cam: '{cam}'")
     add_source_to_scene("05_Multi_Cam", TICKER_SOURCE)
     add_source_to_scene("05_Multi_Cam", CLOCK_SOURCE)
     if LOGO_PATH:
@@ -255,6 +309,7 @@ def build_news_package():
 
     rotate_ticker()
     update_clock()
+    log_info("News package build completed")
 
 
 def rotate_ticker():
