@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>نادي الصحفي الصغير - إدارة الأعضاء</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">برنامج سحابي مبسط</p>
+        <h1>إدارة أعضاء نادي الصحفي الصغير</h1>
+        <p>
+          أضف الأعضاء، حدّث بياناتهم، وتتبع حالتهم في النادي من أي جهاز عبر
+          المتصفح.
+        </p>
+      </div>
+      <div class="palette-card" aria-label="ألوان اللوقو">
+        <p>ألوان الهوية</p>
+        <div class="swatches">
+          <span style="--swatch: #5b9bd5">أزرق</span>
+          <span style="--swatch: #f6e70d">أصفر</span>
+          <span style="--swatch: #101010">أسود</span>
+          <span style="--swatch: #ffffff">أبيض</span>
+          <span style="--swatch: #d8373f">أحمر</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="card">
+        <h2>إضافة / تعديل عضو</h2>
+        <form id="memberForm">
+          <input type="hidden" id="memberId" />
+
+          <label>الاسم الكامل
+            <input id="name" required placeholder="مثال: أحمد محمد" />
+          </label>
+
+          <label>العمر
+            <input id="age" type="number" min="6" max="25" required />
+          </label>
+
+          <label>الهاتف
+            <input id="phone" required placeholder="07xxxxxxxx" />
+          </label>
+
+          <label>المرحلة
+            <select id="level" required>
+              <option value="">اختر المرحلة</option>
+              <option>مبتدئ</option>
+              <option>متوسط</option>
+              <option>متقدم</option>
+            </select>
+          </label>
+
+          <label>التخصص الإعلامي
+            <select id="track" required>
+              <option value="">اختر التخصص</option>
+              <option>تقديم</option>
+              <option>تصوير</option>
+              <option>مونتاج</option>
+              <option>إذاعة</option>
+              <option>صحافة مكتوبة</option>
+            </select>
+          </label>
+
+          <label>الحالة
+            <select id="status" required>
+              <option>نشط</option>
+              <option>متوقف</option>
+              <option>بانتظار التجديد</option>
+            </select>
+          </label>
+
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">حفظ</button>
+            <button type="button" id="cancelEdit" class="btn btn-light">إلغاء التعديل</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="list-head">
+          <h2>قائمة الأعضاء</h2>
+          <input id="search" placeholder="ابحث بالاسم أو الهاتف" />
+        </div>
+
+        <div class="stats" id="stats"></div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>العمر</th>
+                <th>الهاتف</th>
+                <th>المرحلة</th>
+                <th>التخصص</th>
+                <th>الحالة</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="membersTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      يعمل هذا البرنامج بالكامل على المتصفح ويمكنك رفعه على أي استضافة مجانية مثل
+      GitHub Pages أو Netlify لفتحه من أي مكان.
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
