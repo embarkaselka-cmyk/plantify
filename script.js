@@ -11,6 +11,7 @@ const generateArticleBtn = document.getElementById("generateArticleBtn");
 const generateMagazineBtn = document.getElementById("generateMagazineBtn");
 const exportPdfBtn = document.getElementById("exportPdfBtn");
 const clubLogo = document.getElementById("clubLogo");
+const statusMessage = document.getElementById("statusMessage");
 
 let articles = [];
 let imageCache = null;
@@ -31,17 +32,26 @@ form.image.addEventListener("change", (e) => {
   reader.readAsDataURL(file);
 });
 
-generateArticleBtn.addEventListener("click", () => {
-  const moodLines = [
-    "In a bold development, young reporters uncovered details that reshape the community narrative.",
-    "Eyewitnesses describe the scene as energetic, hopeful, and full of possibility for local youth.",
-    "Experts believe this momentum can inspire a new generation of ethical media creators.",
-  ];
+const persistedApiKey = localStorage.getItem("yjc_openai_api_key");
+if (persistedApiKey) form.apiKey.value = persistedApiKey;
 
-  const base = form.content.value.trim();
-  const generated = `${base ? base + "\n\n" : ""}${moodLines.join(" ")}`;
-  form.content.value = generated;
-  flashButton(generateArticleBtn);
+generateArticleBtn.addEventListener("click", async () => {
+  generateArticleBtn.disabled = true;
+  setStatus("Generating article...");
+
+  try {
+    const provider = form.aiProvider.value;
+    const aiText =
+      provider === "openai" ? await generateWithOpenAI() : generateSmartLocalArticle();
+
+    form.content.value = aiText;
+    setStatus(`Article generated via ${provider === "openai" ? "OpenAI API" : "Smart Local AI"}.`);
+    flashButton(generateArticleBtn);
+  } catch (error) {
+    setStatus(`AI generation failed: ${error.message}`);
+  } finally {
+    generateArticleBtn.disabled = false;
+  }
 });
 
 form.addEventListener("submit", (e) => {
@@ -130,18 +140,28 @@ generateMagazineBtn.addEventListener("click", () => {
 
 exportPdfBtn.addEventListener("click", async () => {
   const node = previewRoot.querySelector(".newspaper");
-  if (!node) return;
+  if (!node) {
+    setStatus("Please generate the magazine first.");
+    return;
+  }
 
-  const opt = {
-    margin: 0.3,
-    filename: `young-journalists-magazine-${Date.now()}.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
-  };
+  try {
+    await ensurePdfLibrary();
+    const opt = {
+      margin: 0.3,
+      filename: `young-journalists-magazine-${Date.now()}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+    };
 
-  await html2pdf().from(node).set(opt).save();
-  flashButton(exportPdfBtn);
+    await html2pdf().from(node).set(opt).save();
+    setStatus("PDF exported successfully.");
+    flashButton(exportPdfBtn);
+  } catch (error) {
+    setStatus("PDF library blocked. Opening print dialog as fallback.");
+    window.print();
+  }
 });
 
 function renderQueue() {
@@ -188,6 +208,92 @@ function escapeHtml(value) {
   const div = document.createElement("div");
   div.innerText = value || "";
   return div.innerHTML;
+}
+
+function setStatus(message) {
+  statusMessage.textContent = message;
+}
+
+function generateSmartLocalArticle() {
+  const title = form.title.value.trim() || "Untitled Headline";
+  const author = form.author.value.trim() || "Staff Reporter";
+  const category = form.category.value.trim() || "General";
+  const location = form.location.value.trim() || "Local Desk";
+  const dateText = formatDate(form.date.value);
+  const base = form.content.value.trim();
+
+  const opener = `In ${location}, the Young Journalists Club investigated a developing ${category.toLowerCase()} story under the headline "${title}."`;
+  const body = `Student reporters interviewed sources, verified details, and assembled a fact-checked narrative with clear context for readers. The team highlighted why this event matters now, who is affected, and what outcomes to watch next.`;
+  const closer = `Filed by ${author} on ${dateText}, this report emphasizes ethical journalism, transparency, and community impact while inviting readers to engage with the next edition.`;
+  const callout = `Breaking Insight: Youth-led media teams can turn curiosity into credible reporting when they combine field observation, interviews, and evidence-based writing.`;
+
+  return [base, opener, body, closer, callout].filter(Boolean).join("\n\n");
+}
+
+async function generateWithOpenAI() {
+  const apiKey = form.apiKey.value.trim();
+  if (!apiKey) {
+    throw new Error("No API key provided. Add a key or switch to Smart Local AI.");
+  }
+  localStorage.setItem("yjc_openai_api_key", apiKey);
+
+  const prompt = {
+    title: form.title.value.trim(),
+    author: form.author.value.trim(),
+    category: form.category.value.trim(),
+    location: form.location.value.trim(),
+    date: form.date.value || new Date().toISOString().slice(0, 10),
+    content: form.content.value.trim(),
+  };
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: form.aiModel.value.trim() || "gpt-4o-mini",
+      temperature: 0.8,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a professional magazine editor. Generate a polished news article in 4-6 paragraphs with factual tone and engaging style.",
+        },
+        {
+          role: "user",
+          content: `Write an article with these fields: ${JSON.stringify(prompt)}`,
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`OpenAI API error (${response.status}): ${text.slice(0, 120)}`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content?.trim() || generateSmartLocalArticle();
+}
+
+async function ensurePdfLibrary() {
+  if (typeof html2pdf === "function") return;
+  await loadScript("https://unpkg.com/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js");
+  if (typeof html2pdf !== "function") {
+    throw new Error("html2pdf unavailable");
+  }
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
 }
 
 (function particleBackground() {

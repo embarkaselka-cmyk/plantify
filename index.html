@@ -75,6 +75,27 @@
             <input type="file" name="image" accept="image/*" />
           </label>
 
+          <details class="ai-settings">
+            <summary>⚙️ AI Settings (optional)</summary>
+            <div class="grid two-col ai-grid">
+              <label>
+                AI Provider
+                <select name="aiProvider">
+                  <option value="smart-local">Smart Local AI</option>
+                  <option value="openai">OpenAI API</option>
+                </select>
+              </label>
+              <label>
+                Model
+                <input type="text" name="aiModel" value="gpt-4o-mini" />
+              </label>
+            </div>
+            <label>
+              API Key
+              <input type="password" name="apiKey" placeholder="sk-... (stored only in this browser)" />
+            </label>
+          </details>
+
           <div class="actions">
             <button type="button" id="generateArticleBtn" class="btn btn-primary">
               🤖 Generate Article
@@ -86,6 +107,7 @@
             <button type="button" id="exportPdfBtn" class="btn btn-outline">📄 Export PDF</button>
           </div>
         </form>
+        <p id="statusMessage" class="status-message" aria-live="polite"></p>
 
         <div class="list-wrap">
           <h3>Queued Articles</h3>
