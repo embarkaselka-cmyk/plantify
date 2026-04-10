@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g1" x1="0" x2="1">
+      <stop offset="0" stop-color="#1565C0"/>
+      <stop offset="1" stop-color="#42A5F5"/>
+    </linearGradient>
+  </defs>
+  <circle cx="256" cy="256" r="246" fill="#f5f5f5" stroke="#333" stroke-width="8"/>
+  <circle cx="256" cy="256" r="210" fill="url(#g1)"/>
+  <ellipse cx="256" cy="280" rx="160" ry="120" fill="#fff"/>
+  <ellipse cx="256" cy="280" rx="110" ry="85" fill="#111"/>
+  <text x="256" y="120" font-size="42" fill="#fff" font-family="Arial" text-anchor="middle">الصحفي الصغير</text>
+  <text x="256" y="430" font-size="34" fill="#FFEB3B" font-family="Arial" text-anchor="middle">Young Journalists Club</text>
+</svg>
