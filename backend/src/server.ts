@@ -1,0 +1,13 @@
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { router } from './routes/core.js';
+const app = express();
+app.use(cors({ origin: process.env.FRONTEND_URL || true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.static(path.resolve('public')));
+app.use('/api', router);
+app.get('/health', (_, res) => res.json({ ok: true }));
+const port = Number(process.env.PORT || 4000);
+app.listen(port, () => console.log(`API http://localhost:${port}`));
